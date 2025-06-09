@@ -1,30 +1,56 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getMainCategories } from "../Redux/mainCategorySlice";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./firebase";
+
 
 const HorizontalShopScroll = ({ onCategoryClick }) => {
-  const dispatch = useDispatch();
+  // console.log('onCategoryClick: ', onCategoryClick);
   const scrollRef = useRef(null);
   const scrollAmount = 300;
   const location = useLocation();
+
   const [activeCategory, setActiveCategory] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const shopList = location?.state?.shopID || [];
+  console.log('shopList: ', shopList);
 
-  const { categories, error, status } = useSelector(
-    (state) => state.mainCategory
-  );
+  const [categories1, setCategories] = useState([]);
+  console.log('categoriesMain: ', categories1);
+  // console.log("🚀 shopList:", shopList);
 
-  const handleClick = (cat) => {
-    setActiveCategory(cat.row_seq);
-    onCategoryClick?.(cat.mainCategory_Name, cat.row_seq);
-  };
 
   useEffect(() => {
-    dispatch(getMainCategories());
-  }, [dispatch]);
+    const fetchCategories = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "maincategory"));
+        const categoriesData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+        setError("Failed to load categories.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // ✅ Filter based on Firestore document ID
+  // const filteredCategories = categories.filter((cat) =>
+  //   shopList.map(String).includes(String(cat.id))
+  // );
+  // const handleClick = (cat) => {
+  //   setActiveCategory(cat.id);
+  //   onCategoryClick?.(cat.mainCategory_Name, cat.id);
+  // };
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -35,9 +61,7 @@ const HorizontalShopScroll = ({ onCategoryClick }) => {
     }
   };
 
-  const filteredCategories = categories.filter((cat) =>
-    shopList.includes(Number(cat.row_seq))
-  );
+
 
   return (
     <>
@@ -46,40 +70,31 @@ const HorizontalShopScroll = ({ onCategoryClick }) => {
       </div>
 
       <div style={styles.container}>
-        <button
-          onClick={() => scroll("left")}
-          style={{ ...styles.scrollButton, ...styles.leftButton }}
-        >
+        <button onClick={() => scroll("left")} style={{ ...styles.scrollButton, ...styles.leftButton }}>
           <ChevronLeft />
         </button>
 
         <div ref={scrollRef} style={styles.scrollArea}>
           <div style={styles.contentArea}>
-            {status === "loading" ? (
+            {loading ? (
               <p>Loading...</p>
             ) : filteredCategories.length === 0 ? (
-              <p>No matching subcategories found.</p>
+                <p>No matching categories found.</p>
             ) : (
               filteredCategories.map((cat) => (
                 <div
-                  key={cat.row_seq}
+                  key={cat.id}
                   onClick={() => handleClick(cat)}
                   style={{
                     cursor: "pointer",
-                    transform:
-                      activeCategory === cat.row_seq
-                        ? "scale(1.05)"
-                        : "scale(1)",
+                    transform: activeCategory === cat.id ? "scale(1.05)" : "scale(1)",
                     transition: "transform 0.2s ease-in-out",
                   }}
                 >
                   <div
                     style={{
                       ...styles.card,
-                      border:
-                        activeCategory === cat.row_seq
-                          ? "1px solid #007bff"
-                          : "none",
+                      border: activeCategory === cat.id ? "1px solid #007bff" : "none",
                     }}
                   >
                     <div style={styles.imageWrapper}>
@@ -93,10 +108,8 @@ const HorizontalShopScroll = ({ onCategoryClick }) => {
                   <p
                     style={{
                       ...styles.name,
-                      fontWeight:
-                        activeCategory === cat.row_seq ? "bold" : "normal",
-                      color:
-                        activeCategory === cat.row_seq ? "#007bff" : "#000",
+                      fontWeight: activeCategory === cat.id ? "bold" : "normal",
+                      color: activeCategory === cat.id ? "#007bff" : "#000",
                     }}
                   >
                     {cat.mainCategory_Name}
@@ -107,10 +120,7 @@ const HorizontalShopScroll = ({ onCategoryClick }) => {
           </div>
         </div>
 
-        <button
-          onClick={() => scroll("right")}
-          style={{ ...styles.scrollButton, ...styles.rightButton }}
-        >
+        <button onClick={() => scroll("right")} style={{ ...styles.scrollButton, ...styles.rightButton }}>
           <ChevronRight />
         </button>
       </div>
@@ -145,20 +155,15 @@ const styles = {
     cursor: "pointer",
     zIndex: 10,
   },
-  leftButton: {
-    left: "0px",
-  },
-  rightButton: {
-    right: "0px",
-  },
+  leftButton: { left: "0px" },
+  rightButton: { right: "0px" },
   scrollArea: {
     display: "flex",
     overflowX: "auto",
     scrollBehavior: "smooth",
-    padding: "0 50px", // increased padding to prevent hiding behind buttons
-    msOverflowStyle: "none", // Hide scrollbar IE/Edge
-    scrollbarWidth: "none", // Hide scrollbar Firefox
-   
+    padding: "0 50px",
+    msOverflowStyle: "none",
+    scrollbarWidth: "none",
     justifyContent: "center",
   },
   contentArea: {
@@ -179,7 +184,7 @@ const styles = {
     justifyContent: "center",
     flexDirection: "column",
     transition: "all 0.2s ease-in-out",
-    flexShrink: 0, // prevents shrinking when screen is narrow
+    flexShrink: 0,
   },
   imageWrapper: {
     width: "4rem",
@@ -197,27 +202,6 @@ const styles = {
     fontSize: "14px",
     color: "#000",
     textAlign: "center",
-  },
-};
-
-// Add media queries for responsiveness
-const responsiveStyles = {
-  "@media (max-width: 768px)": {
-    container: {
-      margin: "1rem",
-    },
-    card: {
-      width: "4rem !important",
-      height: "4rem !important",
-    },
-    imageWrapper: {
-      width: "3rem !important",
-      height: "3rem !important",
-    },
-    scrollButton: {
-      padding: "6px !important",
-      top: "45% !important",
-    },
   },
 };
 

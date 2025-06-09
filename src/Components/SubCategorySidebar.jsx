@@ -5,11 +5,11 @@ const SubCategorySidebar = ({ subCategories, activeTab, onTabClick }) => {
     <>
       <div style={styles.sidebar} className="hide-scrollbar">
         {subCategories.map((cat) => {
-          const isActive = activeTab === cat.row_seq;
+          const isActive = activeTab === cat.id;
           return (
             <div
-              key={cat.row_seq}
-              onClick={() => onTabClick(cat.row_seq)}
+              key={cat.id}
+              onClick={() => onTabClick(cat.id)}
               style={{
                 ...styles.tabItem,
                 //  backgroundColor: isActive ? "#f0f8ff" : "transparent",
@@ -19,7 +19,7 @@ const SubCategorySidebar = ({ subCategories, activeTab, onTabClick }) => {
               }}
             >
               <img
-                src={cat.SubCategory_Image}
+                src={cat.subCategory_Image}///subCategory_Image
                 alt={cat.subCategory_Name}
                 style={styles.tabImage}
               />

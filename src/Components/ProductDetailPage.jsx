@@ -1,19 +1,23 @@
-
 import { ShoppingCart } from "lucide-react";
 import { useLocation } from "react-router-dom";
+
 const ProductDetailPage = () => {
   const { state } = useLocation();
   const { product } = state || {};
- 
-  
-
-
+  console.log("product: ", product);
 
   if (!product) return <p>Product not found.</p>;
 
-  const description = JSON.parse(product.ProductDescription);
+  const description =
+    typeof product.ProductDescription === "string"
+      ? JSON.parse(product.ProductDescription)
+      : product.ProductDescription;
+
   const imageUrl = description?.images?.[0];
-  const variant = JSON.parse(product.variants)?.[0];
+  const variant = Array.isArray(product.variants)
+    ? product.variants[0]
+    : JSON.parse(product.variants)[0];
+
   const salePrice = variant?.salePrice ?? 0;
 
   return (
@@ -21,7 +25,11 @@ const ProductDetailPage = () => {
       <div style={styles.container}>
         {/* Image section */}
         <div style={styles.imageSection}>
-          <img src={imageUrl} alt={product.productName} style={styles.image} />
+          <img
+            src={imageUrl}
+            alt={product.productName}
+            style={styles.image}
+          />
           <div style={styles.pagination}>
             <span style={{ ...styles.dot, backgroundColor: "#000" }} />
             <span style={styles.dot} />
@@ -79,17 +87,16 @@ const styles = {
   wrapper: {
     background: "#e6edf0",
     padding: "1rem",
-    width:'100%',
+    width: "100%",
     minHeight: "80vh",
   },
   container: {
     display: "flex",
     gap: "4rem",
-   
     backgroundColor: "#fff",
     padding: "2rem",
     borderRadius: "1rem",
-    width:'94%',
+    width: "94%",
     margin: "0 auto",
     boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
   },

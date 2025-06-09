@@ -16,7 +16,7 @@ const QuickCall = () => {
       borderRadius: "12px",
       // boxShadow: isMobile ? undefined: '0 4px 8px rgba(0,0,0,0.1)' ,
       border: "1px solid #ddd", // <-- Added border
-      borderRadius: "10px",
+      // borderRadius: "10px",
       textAlign: "center",
       backgroundColor: "#fff",
       margin: isMobile ? "0.8rem 0.2rem" : "3rem 3rem",

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth } from "./firebase";
+import { auth } from "./firebase"; // ✅ Make sure this is correct
 import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -64,42 +64,42 @@ const LoginModal = ({ onClose }) => {
   const [loginData, setLoginData] = useState(null);
   const [error, setError] = useState(null);
 
-  const fetchLoginData = async (token) => {
-    try {
-      const response = await axios.get(
-        `https://partnerappbackend-production.up.railway.app/auth/verify/${token}`
-      );
-      console.log("response.data", response.data);
-      return response.data;
-    } catch (error) {
-      console.error(error.response?.data || error.message);
-      throw new Error("Failed to fetch login data");
-    }
-  };
+  // const fetchLoginData = async (token) => {
+  //   try {
+  //     const response = await axios.get(
+  //       `https://partnerappbackend-production.up.railway.app/auth/verify/${token}`
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error(error.response?.data || error.message);
+  //     throw new Error("Failed to fetch login data");
+  //   }
+  // };
 
   useEffect(() => {
-    const initializeRecaptcha = () => {
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
+    if (!window.recaptchaVerifier && auth) {
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(
+          "recaptcha-container",
+          {
+            size: "invisible",
+            callback: (response) => {
+              console.log("reCAPTCHA solved:", response);
+            },
+          },
+          auth
+        );
+  
+        window.recaptchaVerifier.render().then((widgetId) => {
+          window.recaptchaWidgetId = widgetId;
+          console.log("reCAPTCHA initialized with widgetId:", widgetId);
+        });
+      } catch (err) {
+        console.error("Failed to initialize reCAPTCHA:", err);
       }
-
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        {
-          size: "invisible",
-          callback: () => {
-            console.log("reCAPTCHA resolved");
-          },
-          "expired-callback": () => {
-            alert("reCAPTCHA expired. Please refresh and try again.");
-          },
-        }
-      );
-    };
-
-    initializeRecaptcha();
+    }
   }, []);
+  
 
   const handleSendOtp = async () => {
     if (!/^\d{10}$/.test(mobile)) {
@@ -121,7 +121,7 @@ const LoginModal = ({ onClose }) => {
       alert("OTP has been sent to your mobile.");
     } catch (error) {
       console.error("Error sending OTP:", error);
-      alert("Failed to send OTP. Please check the number and try again.");
+      alert("Failed to send OTP. Check phone number or reCAPTCHA.");
     } finally {
       setLoading(false);
     }
@@ -137,16 +137,13 @@ const LoginModal = ({ onClose }) => {
     try {
       const result = await window.confirmationResult.confirm(otp);
       const user = result.user;
-      console.log("User signed in:", user.phoneNumber);
-
-      // Get fresh ID token after OTP verification
-      const token = await user.getIdToken(true); // force refresh
+      const token = await user.getIdToken(true);
       const loginResponse = await fetchLoginData(token);
       setLoginData(loginResponse);
-
       alert("Login successful!");
       onClose();
     } catch (error) {
+      console.error("OTP verification failed:", error);
       if (error.code === "auth/invalid-verification-code") {
         alert("Incorrect OTP. Please try again.");
       } else if (error.code === "auth/code-expired") {
@@ -154,7 +151,6 @@ const LoginModal = ({ onClose }) => {
       } else {
         alert("Failed to verify OTP. Please try again.");
       }
-      console.error("OTP verification failed:", error);
     } finally {
       setLoading(false);
     }

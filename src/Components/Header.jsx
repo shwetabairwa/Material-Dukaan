@@ -18,14 +18,16 @@ const Header = () => {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      padding: "1rem 1rem",
+      padding: "0.2rem",
       backgroundColor: "#fff",
       boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
       flexWrap: "wrap",
       position: "relative",
     },
     logo: {
-      width:'5rem',
+      width: '9rem',
+      // hight:'1rem'
+      // ,
       fontSize: "1.5rem",
       backgroundColor:'#fff',
       fontWeight: "bold",

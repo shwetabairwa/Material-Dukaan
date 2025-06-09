@@ -40,7 +40,7 @@ const ShopCard = ({
     },
     image: {
       alignItems:'flex-end',
-      width: isMobile ? "50%" : "50%",
+      width: isMobile ? "40%" : "50%",
       height: isMobile ? "100%" : "100%",
       objectFit: "contain",
     },
